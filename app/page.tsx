@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase-server";
 export default async function Home() {
  const supabase=await createClient(); const {data:{user}}=await supabase.auth.getUser(); if(!user) redirect("/login");
  const {data:profile}=await supabase.from("profiles").select("role").eq("id",user.id).single();
- const {data:rows}=await supabase.from("repair_requests").select("id,status,created_at,title,location_text").order("created_at",{ascending:false}).limit(8);
+ const {data:rows}=await supabase.from("repair_requests").select("id,request_no,status,created_at,title,location_text").order("created_at",{ascending:false}).limit(8);
  const {count:all}=await supabase.from("repair_requests").select("*",{count:"exact",head:true});
  const {count:done}=await supabase.from("repair_requests").select("*",{count:"exact",head:true}).eq("status","เสร็จสิ้น");
  const {count:progress}=await supabase.from("repair_requests").select("*",{count:"exact",head:true}).eq("status","กำลังดำเนินการ");
