@@ -1,0 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
+*{box-sizing:border-box} body{margin:0;background:#f4f6fa;color:#172033;font-family:'Noto Sans Thai',system-ui,sans-serif}
+a{color:inherit;text-decoration:none} button,input,textarea,select{font:inherit}
+.shell{max-width:1180px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#142b49;color:white;padding:18px 24px;border-radius:18px}
+.brand{font-size:19px;font-weight:700}.muted{color:#64748b;font-size:13px}.nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.nav a,.btn{border:0;border-radius:10px;padding:10px 14px;background:#e8edf5;color:#20334e;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.nav a:hover,.btn:hover{filter:brightness(.97)}.primary{background:#1d4ed8;color:white}.card{background:white;border:1px solid #e5eaf1;border-radius:16px;padding:18px;box-shadow:0 3px 12px #13294b08}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+h1{font-size:25px;margin:0 0 6px}h2{font-size:18px;margin:0 0 12px}.stat{font-size:30px;font-weight:700;margin-top:8px}
+label{display:block;font-size:14px;font-weight:600;margin:12px 0 6px}input,textarea,select{width:100%;padding:11px 12px;border:1px solid #cfd8e5;border-radius:10px;background:white;color:#172033}
+textarea{min-height:110px;resize:vertical}.form{max-width:760px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:680px}th,td{text-align:left;padding:12px;border-bottom:1px solid #edf0f5;font-size:14px}th{color:#64748b;font-weight:600}
+.badge{display:inline-block;border-radius:99px;padding:4px 9px;font-size:12px;background:#fff2d7;color:#9a5b00}.b-blue{background:#e5efff;color:#1d4ed8}.b-green{background:#e2f7e9;color:#16743a}.b-gray{background:#eef1f5;color:#475569}
+.stack{display:grid;gap:14px}.notice{padding:12px;border-radius:10px;background:#e9f7ee;color:#176b37;margin:12px 0}.error{background:#fff0f0;color:#a11}.footer{margin:26px 0 8px;text-align:center;color:#8792a3;font-size:12px}
+@media(max-width:760px){.shell{padding:12px}.top{padding:15px;align-items:flex-start;flex-direction:column}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.stat{font-size:26px}}
