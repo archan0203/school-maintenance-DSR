@@ -15,6 +15,7 @@ type LocationItem = {
 type ProfileItem = {
   id: string;
   full_name: string;
+  email: string;
   role: "admin" | "technician" | "staff";
 };
 
@@ -60,7 +61,10 @@ export default function Admin() {
         .from("locations")
         .select("id,building_id,floor,room,buildings(name)")
         .order("floor"),
-      sb.from("profiles").select("id,full_name,role").order("created_at", { ascending: false }),
+      sb
+        .from("profiles")
+        .select("id,full_name,email,role")
+        .order("created_at", { ascending: false }),
     ]);
 
     setBuildings(b || []);
@@ -329,9 +333,9 @@ export default function Admin() {
             <table>
               <thead>
                 <tr>
-                  <th>รหัสผู้ใช้</th>
-                  <th style={{ minWidth: 260 }}>ชื่อ - นามสกุล</th>
-                  <th style={{ minWidth: 210 }}>บทบาท (Role)</th>
+                  <th style={{ minWidth: 200 }}>อีเมล</th>
+                  <th style={{ minWidth: 250 }}>ชื่อ - นามสกุล</th>
+                  <th style={{ minWidth: 200 }}>บทบาท (Role)</th>
                   <th>จัดการ</th>
                 </tr>
               </thead>
@@ -574,7 +578,12 @@ function UserRow({
 
   return (
     <tr>
-      <td className="muted">{profile.id.slice(0, 8)}...</td>
+      <td>
+        <div style={{ fontWeight: 500 }}>{profile.email || "-"}</div>
+        <div className="muted" style={{ fontSize: 11 }}>
+          ID: {profile.id.slice(0, 8)}...
+        </div>
+      </td>
       <td>
         <NameCombobox
           value={name}
