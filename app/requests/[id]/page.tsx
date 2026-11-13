@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase";
 
 type Req = {
   id: string;
-  request_no: number;
+  request_no: string;
   title: string;
   location_text: string;
   description: string;
@@ -179,6 +179,37 @@ export default function Detail() {
     await load();
   }
 
+  async function deleteRequest() {
+    if (!row) return;
+    if (
+      !confirm(
+        `ยืนยันการลบรายการแจ้งซ่อมเลขที่ ${row.request_no} (${row.title})?\nข้อมูลการซ่อมและรูปภาพทั้งหมดจะถูกลบถาวร`
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    setMessage("");
+    const sb = createClient();
+
+    if (images.length > 0) {
+      const paths = images.map((im) => im.storage_path).filter(Boolean);
+      if (paths.length > 0) {
+        await sb.storage.from("repair-images").remove(paths);
+      }
+    }
+
+    const { error } = await sb.from("repair_requests").delete().eq("id", id);
+    if (error) {
+      setMessage("ลบรายการไม่สำเร็จ: " + error.message);
+      setBusy(false);
+      return;
+    }
+
+    router.push("/requests");
+    router.refresh();
+  }
+
   function badgeClass(status: string) {
     if (status === "เสร็จสิ้น") return "badge b-green";
     if (status === "กำลังดำเนินการ") return "badge b-blue";
@@ -200,11 +231,26 @@ export default function Detail() {
       <Nav />
       <div className="stack">
         <div className="card">
-          <div className="muted">
-            เลขที่ #{row.request_no} · แจ้งเมื่อ{" "}
-            {new Date(row.created_at).toLocaleString("th-TH")}
+          <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <div className="muted">
+                เลขที่ {row.request_no} · แจ้งเมื่อ{" "}
+                {new Date(row.created_at).toLocaleString("th-TH")}
+              </div>
+              <h1>{row.title}</h1>
+            </div>
+            {role === "admin" && (
+              <button
+                type="button"
+                className="btn"
+                style={{ background: "#fee2e2", color: "#991b1b" }}
+                disabled={busy}
+                onClick={deleteRequest}
+              >
+                🗑️ ลบรายการแจ้งซ่อม
+              </button>
+            )}
           </div>
-          <h1>{row.title}</h1>
           <p><b>สถานที่:</b> {row.location_text}</p>
           <p><b>รายละเอียด:</b> {row.description}</p>
           <p>
