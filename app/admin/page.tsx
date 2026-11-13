@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Nav from "@/components/Nav";
 import { createClient } from "@/lib/supabase";
@@ -17,6 +17,8 @@ type ProfileItem = {
   full_name: string;
   role: "admin" | "technician" | "staff";
 };
+
+const TITLE_PREFIXES = ["นาย ", "นาง ", "นางสาว ", "ว่าที่ ร.ต. "];
 
 export default function Admin() {
   const router = useRouter();
@@ -72,6 +74,15 @@ export default function Admin() {
   useEffect(() => {
     loadAll();
   }, []);
+
+  const existingNames = useMemo(() => {
+    const set = new Set<string>();
+    profiles.forEach((p) => {
+      const n = (p.full_name || "").trim();
+      if (n) set.add(n);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "th"));
+  }, [profiles]);
 
   async function addBuilding(e: React.FormEvent) {
     e.preventDefault();
@@ -312,21 +323,26 @@ export default function Admin() {
         <div className="card">
           <h2>3. จัดการบุคลากรและสิทธิ์การใช้งาน (Roles)</h2>
           <p className="muted" style={{ marginBottom: 12 }}>
-            กำหนดบทบาท: <b>staff</b> (ครู/บุคลากรแจ้งซ่อม), <b>technician</b> (ช่างซ่อม), <b>admin</b> (ผู้ดูแลระบบ)
+            กำหนดบทบาท: <b>staff</b> (ครู/บุคลากรแจ้งซ่อม), <b>technician</b> (ช่างซ่อม), <b>admin</b> (ผู้ดูแลระบบ) · คลิกที่ช่องชื่อเพื่อเลือกจากรายการหรือพิมพ์ชื่อใหม่ได้ทันที
           </p>
           <div className="tablewrap">
             <table>
               <thead>
                 <tr>
                   <th>รหัสผู้ใช้</th>
-                  <th>ชื่อ - นามสกุล</th>
-                  <th>บทบาท (Role)</th>
+                  <th style={{ minWidth: 260 }}>ชื่อ - นามสกุล</th>
+                  <th style={{ minWidth: 210 }}>บทบาท (Role)</th>
                   <th>จัดการ</th>
                 </tr>
               </thead>
               <tbody>
                 {profiles.map((u) => (
-                  <UserRow key={u.id} profile={u} onSave={updateUserProfile} />
+                  <UserRow
+                    key={u.id}
+                    profile={u}
+                    suggestions={existingNames}
+                    onSave={updateUserProfile}
+                  />
                 ))}
               </tbody>
             </table>
@@ -337,11 +353,219 @@ export default function Admin() {
   );
 }
 
+function NameCombobox({
+  value,
+  onChange,
+  suggestions,
+  placeholder,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  suggestions: string[];
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 260 });
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  function updatePosition() {
+    if (!inputRef.current) return;
+    const rect = inputRef.current.getBoundingClientRect();
+    setPos({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: Math.max(rect.width, 250),
+    });
+  }
+
+  function openMenu() {
+    updatePosition();
+    setOpen(true);
+  }
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node;
+      if (
+        inputRef.current &&
+        !inputRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    function handleScroll(e: Event) {
+      if (menuRef.current && menuRef.current.contains(e.target as Node)) return;
+      setOpen(false);
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [open]);
+
+  const filteredNames = useMemo(() => {
+    const q = value.trim().toLowerCase();
+    if (!q) return suggestions;
+    return suggestions.filter((name) => name.toLowerCase().includes(q));
+  }, [suggestions, value]);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        style={{ paddingRight: 34 }}
+        onFocus={openMenu}
+        onClick={openMenu}
+        onChange={(e) => {
+          onChange(e.target.value);
+          if (!open) openMenu();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setOpen(false);
+        }}
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label="เลือกรายชื่อ"
+        onClick={() => (open ? setOpen(false) : openMenu())}
+        style={{
+          position: "absolute",
+          right: 6,
+          top: "50%",
+          transform: "translateY(-50%)",
+          border: 0,
+          background: "transparent",
+          color: "#64748b",
+          cursor: "pointer",
+          padding: "4px 6px",
+          fontSize: 13,
+        }}
+      >
+        ▾
+      </button>
+
+      {open && (
+        <div
+          ref={menuRef}
+          style={{
+            position: "fixed",
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            maxHeight: 240,
+            overflowY: "auto",
+            background: "white",
+            border: "1px solid #cfd8e5",
+            borderRadius: 10,
+            boxShadow: "0 10px 25px rgba(15, 23, 42, 0.12)",
+            zIndex: 9999,
+            padding: 6,
+          }}
+        >
+          {filteredNames.length > 0 && (
+            <>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#64748b",
+                  padding: "4px 8px",
+                }}
+              >
+                รายชื่อที่มีในระบบ
+              </div>
+              {filteredNames.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => {
+                    onChange(name);
+                    setOpen(false);
+                  }}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "7px 10px",
+                    border: 0,
+                    borderRadius: 7,
+                    background: name === value ? "#eff6ff" : "transparent",
+                    color: "#172033",
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                >
+                  👤 {name}
+                </button>
+              ))}
+            </>
+          )}
+
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: "#64748b",
+              padding: "6px 8px 4px",
+              borderTop: filteredNames.length > 0 ? "1px solid #edf0f5" : undefined,
+              marginTop: filteredNames.length > 0 ? 4 : 0,
+            }}
+          >
+            คำนำหน้าชื่อ (คลิกเพื่อเติมแล้วพิมพ์ชื่อต่อ)
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "2px 6px 6px" }}>
+            {TITLE_PREFIXES.map((prefix) => (
+              <button
+                key={prefix}
+                type="button"
+                onClick={() => {
+                  const stripped = value.replace(/^(นาย|นางสาว|นาง|ว่าที่ ร\.ต\.)\s*/, "");
+                  onChange(prefix + stripped);
+                  setOpen(false);
+                  inputRef.current?.focus();
+                }}
+                style={{
+                  border: "1px solid #dbe3ef",
+                  background: "#f8fafc",
+                  color: "#20334e",
+                  borderRadius: 6,
+                  padding: "4px 8px",
+                  fontSize: 12,
+                  cursor: "pointer",
+                }}
+              >
+                {prefix.trim()}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function UserRow({
   profile,
+  suggestions,
   onSave,
 }: {
   profile: ProfileItem;
+  suggestions: string[];
   onSave: (id: string, fullName: string, role: "admin" | "technician" | "staff") => Promise<void>;
 }) {
   const [name, setName] = useState(profile.full_name);
@@ -352,10 +576,11 @@ function UserRow({
     <tr>
       <td className="muted">{profile.id.slice(0, 8)}...</td>
       <td>
-        <input
+        <NameCombobox
           value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="ระบุชื่อ-นามสกุล"
+          onChange={setName}
+          suggestions={suggestions}
+          placeholder="เลือกจากรายการ หรือพิมพ์ชื่อ-นามสกุล"
         />
       </td>
       <td>
