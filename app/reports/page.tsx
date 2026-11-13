@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase";
 
 type ReportRow = {
   id: string;
-  request_no: number;
+  request_no: string;
   title: string;
   location_text: string;
   status: string;
@@ -20,7 +20,6 @@ export default function Reports() {
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [rows, setRows] = useState<ReportRow[]>([]);
 
-  // Filters
   const [statusFilter, setStatusFilter] = useState("ทั้งหมด");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -76,7 +75,7 @@ export default function Reports() {
       if (keyword.trim()) {
         const q = keyword.trim().toLowerCase();
         const match =
-          String(r.request_no).includes(q) ||
+          (r.request_no || "").toLowerCase().includes(q) ||
           r.title.toLowerCase().includes(q) ||
           r.location_text.toLowerCase().includes(q);
         if (!match) return false;
@@ -163,7 +162,6 @@ export default function Reports() {
           </button>
         </div>
 
-        {/* ตัวกรองรายงาน */}
         <div className="card">
           <div className="grid">
             <div>
@@ -222,7 +220,6 @@ export default function Reports() {
           )}
         </div>
 
-        {/* สรุปตัวเลขตามตัวกรอง */}
         <div className="grid2">
           <div className="card">
             <div className="muted">จำนวนงานซ่อม (เสร็จสิ้น {completedCount} รายการ)</div>
@@ -234,7 +231,6 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* ตารางรายงาน */}
         <div className="card">
           <h2>ประวัติงานซ่อม</h2>
           <div className="tablewrap">
@@ -252,9 +248,9 @@ export default function Reports() {
               <tbody>
                 {filtered.map((r) => (
                   <tr key={r.id}>
-                    <td>
+                    <td style={{ whiteSpace: "nowrap" }}>
                       <Link href={`/requests/${r.id}`} style={{ color: "#1d4ed8", fontWeight: 600 }}>
-                        #{r.request_no}
+                        {r.request_no}
                       </Link>
                     </td>
                     <td>{r.title}</td>
