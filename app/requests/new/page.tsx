@@ -68,11 +68,19 @@ export default function NewRequest() {
     }
 
     const sb = createClient();
-    const { data: { user } } = await sb.auth.getUser();
+    const {
+      data: { user },
+    } = await sb.auth.getUser();
     if (!user) {
       router.push("/login");
       return;
     }
+
+    const { data: profile } = await sb
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle();
 
     const { data: row, error: insertError } = await sb
       .from("repair_requests")
@@ -82,7 +90,7 @@ export default function NewRequest() {
         location_text: locationText,
         description: detail.trim(),
       })
-      .select("id")
+      .select("id,request_no,status")
       .single();
 
     if (insertError || !row) {
@@ -91,6 +99,7 @@ export default function NewRequest() {
       return;
     }
 
+    let imageUrl = "";
     if (file) {
       const ext = file.name.split(".").pop() || "jpg";
       const path = `${row.id}/${crypto.randomUUID()}.${ext}`;
@@ -104,9 +113,32 @@ export default function NewRequest() {
           kind: "before",
           uploaded_by: user.id,
         });
+        const { data: signed } = await sb.storage
+          .from("repair-images")
+          .createSignedUrl(path, 60 * 60 * 24 * 7);
+        imageUrl = signed?.signedUrl || "";
       } else {
         setError("บันทึกรายการแล้ว แต่แนบรูปไม่สำเร็จ: " + upErr.message);
       }
+    }
+
+    try {
+      await fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: row.id,
+          request_no: row.request_no,
+          title: title.trim(),
+          location_text: locationText,
+          description: detail.trim(),
+          reporter_name: profile?.full_name || user.email || "-",
+          status: row.status,
+          image_url: imageUrl,
+        }),
+      });
+    } catch {
+      // ไม่ขัดจังหวะการเปิดหน้ารายละเอียดหากระบบแจ้งเตือนขัดข้อง
     }
 
     router.push(`/requests/${row.id}`);
@@ -139,7 +171,9 @@ export default function NewRequest() {
                 }}
               >
                 {buildings.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
                 ))}
                 <option value="other">อื่นๆ (ระบุสถานที่เอง)</option>
               </select>
