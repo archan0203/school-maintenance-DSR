@@ -96,6 +96,17 @@ export default function Requests() {
       setErr("ลบรายการไม่สำเร็จ: " + error.message);
       return;
     }
+
+    try {
+      await fetch("/api/sheet-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ request_no: item.request_no }),
+      });
+    } catch {
+      // ไม่ขัดจังหวะการแสดงผลหากระบบซิงก์ชีทขัดข้อง
+    }
+
     setMsg(`ลบรายการเลขที่ ${item.request_no} เรียบร้อยแล้ว`);
     await load();
   }
