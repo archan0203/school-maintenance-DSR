@@ -395,4 +395,58 @@ export default function Detail() {
                 <input
                   readOnly
                   style={{ background: "#f8fafc", fontWeight: 600 }}
-                  value={(
+                  value={(Number(qty) * Number(price) + Number(labor)).toFixed(2)}
+                />
+              </div>
+            </div>
+
+            <button
+              className="btn primary"
+              style={{ marginTop: 14 }}
+              disabled={busy}
+              onClick={update}
+            >
+              {busy ? "กำลังบันทึก..." : "บันทึกผลการซ่อม"}
+            </button>
+          </div>
+        )}
+
+        {message && <div className="notice">{message}</div>}
+
+        <div className="card">
+          <h2>ประวัติการดำเนินการและค่าใช้จ่าย</h2>
+          {updates.length === 0 ? (
+            <p className="muted">ยังไม่มีประวัติการบันทึกผลซ่อม</p>
+          ) : (
+            <div className="tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>วัน-เวลา</th>
+                    <th>รายละเอียดการซ่อม</th>
+                    <th>ค่าวัสดุ</th>
+                    <th>ค่าแรง</th>
+                    <th>รวม (บาท)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {updates.map((u) => (
+                    <tr key={u.id}>
+                      <td>{new Date(u.created_at).toLocaleString("th-TH")}</td>
+                      <td>{u.details || "-"}</td>
+                      <td>
+                        {Number(u.material_quantity)} × {Number(u.unit_price).toLocaleString("th-TH")}
+                      </td>
+                      <td>{Number(u.labor_cost).toLocaleString("th-TH")}</td>
+                      <td><b>{Number(u.total_cost).toLocaleString("th-TH")} ฿</b></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
